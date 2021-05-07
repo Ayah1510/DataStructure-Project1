@@ -1,0 +1,309 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+//the node structure containing a string data and a pointer to the next element
+struct node{
+    char Data[15];
+    struct node* Next;
+};
+
+// creating the functions prototypes
+struct node* CreateList();
+void ReturnOriginal(struct node *L,int max);
+void changeData(struct node *L, int max);
+int FindLongest(struct node* L);
+struct node*  RadixSort(struct node*L);
+struct node* MakeEmpty(struct node* L);
+int IsEmpty(struct node*L);
+int IsLast(struct node*p,struct node *L);
+struct node* Find(char[] , struct node*);
+struct node* FindPrevious(char[], struct node*L);
+void Delete(char [], struct node*L);
+void Insert(char[], struct node*L, struct node *p);
+void PrintList(struct node*L);
+void DeleteList(struct node* L);
+int Size(struct node*L);
+
+int main()
+{
+    struct node* head= NULL;
+    head=(struct node*)malloc(sizeof(struct node));
+    head->Next=NULL;
+    int option;
+
+    printf(" ------Main Menu------\n");
+    printf("1: Read the input file\n");
+    printf("2: print the strings before sorting\n");
+    printf("3: sort the strings\n");
+    printf("4: print the strings after sorting\n");
+    printf("5: Exit\n");
+    do{                                                                               //loop to do the options of the user from the menu. It stops only when entering number 5
+        printf("press the number for your option:\n");
+        scanf("%d",&option);
+        switch(option){
+            case 1:head=CreateList();
+                   if(!IsEmpty(head))                                                //to show the user that there was no problem reading the input file
+                       printf("---Input file has been read.\n\n");
+                   break;
+            case 2: PrintList(head);
+                    break;
+            case 3: head=RadixSort(head);
+                    if(!IsEmpty(head))                                               //to show the user that the list has been successfully sorted
+                        printf("---List has been sorted.\n\n");
+                    break;
+            case 4: PrintList(head);
+                    break;
+            case 5: break;
+            default: printf("please enter only one of the given numbers!\n\n");      //to alart the user to only enter one of the numbers in the menu
+        }
+    }while(option!=5);
+    return 0;
+}
+
+struct node* CreateList(){                                                     //creating the linked list
+    struct node* h= NULL;
+    h=(struct node*)malloc(sizeof(struct node));
+    h->Next=NULL;
+    struct node* temp= NULL;
+    int i,a,len=0;
+    char data[17];
+    char nameFile[30];
+    printf("Please enter name of the text file containing the strings with its extention\n");   //to let the user enter the name of the file
+    scanf("%s",nameFile);
+    if(strstr(nameFile,".txt")==NULL)
+        strcpy(nameFile,strcat(nameFile,".txt"));
+    FILE *in;                                                                //pointer of type file; for communication between the file and the program
+    in=fopen(nameFile,"r");                                                  //opening the file with reading mode "r"
+    if(in==NULL)                                                             //to let the user that reading the file was not successful and to not continue with creating the linked list
+        printf("---File not found!\n\n");
+    else{
+    do{                                                                      //to find how many lines in the file by counting the numbers of the new line character'\n'
+        a=getc(in);
+        if(a=='\n')
+            ++len;
+    }while(a!=EOF);
+    ++len;
+    fclose(in);
+    in=fopen(nameFile,"r");                                                //reopening the file to read the data;because the first time the end of the file has been reached
+    for(i=0;i<len;++i){
+        fgets(data,17,in);                                                 //although the n in fgets is 17 but it only reads 15 character because it stops when reaching (n-1) character and it includes the null character
+        strcpy(data,strtok(data,"\n"));                                    //to split the new-line character from the data
+        temp=h;
+        while(temp->Next!=NULL){                                           //to reach the last node; so the insertion will happen at the end of the list
+            temp=temp->Next;
+        }
+        Insert(data,h,temp);
+    }
+    fclose(in);
+    }
+    return h;
+}
+int FindLongest(struct node* L){                                             //to find the longest size of the strings
+    struct node*p;
+    int counter=0,numOfDigits,size=Size(L);
+    char max[15];
+    strcpy(max,L->Next->Data);
+    p=L->Next;
+    while(p!=NULL&& (counter!=(size-1))){
+        if(strlen(max)<strlen(p->Next->Data)){
+            strcpy(max,p->Next->Data);
+        }
+        ++counter;
+                p=p->Next;
+        }
+        numOfDigits=strlen(max);                                          //to find the length of the longest string
+   return numOfDigits;
+}
+
+struct node* RadixSort(struct node*L){                                   //function to perform the radix sort
+    struct node*p;
+    p=L;
+    if(IsEmpty(L))                                                       //to check whether the linked list is empty. Because if it is empty the program will not continue with the radix sort
+        printf("Empty List!.\n\n");
+    else{
+    struct node*q;
+
+    struct node *array[38],*a[38];                                                              //initializing the array that holds the alphabet/numbers to do the comparison with
+    int i,j,k,w,numOfDigits=FindLongest(L),numOfDigits2=numOfDigits,size=Size(L);
+    char x[2],character[1];;
+
+    for(i=0;i<38;i++){
+        array[i]=(struct node*)malloc(sizeof(struct node));
+        array[i]->Next=NULL;
+        a[i]=(struct node*)malloc(sizeof(struct node));
+        a[i]->Next=NULL;
+    }
+    Insert("*",array,array[0]);
+    Insert(" ",array,array[1]);
+    for(i=2,j=0;i<12;i++,j++){                                                       //inserting the 0-9 numbers
+        character[0]='0'+j;
+        Insert(character,array,array[i]);
+}
+    for(i=12,j=0;i<38;i++,j++){                                                     //inserting the 26 alphabet
+        character[0]='a'+j;
+        Insert(character,array,array[i]);
+    }
+    for(i=0;i<38;i++){
+        a[i]=array[i];
+    }
+    changeData(p,numOfDigits);                                                   //appending * to end of the data in the nodes so that all the strings would be the same length
+    for(i=numOfDigits;i>0;--i){
+            p=p->Next;
+            --numOfDigits;
+        for(j=0;j<size;j++){
+               x[0]= tolower(p->Data[numOfDigits]);                             //to change the upper case alphabet into a lower
+               for(k=0;k<38;++k){
+               if(strcmp(x,array[k]->Next->Data)==0){                          //comparison between the alphabet in the string with the characters in the array to add the data containing the alphabet in a node after its same character node in the array
+                  Insert(p->Data,a,a[k]->Next);
+                  a[k]=a[k]->Next;
+               }
+               }
+               x[0]=NULL;
+               p=p->Next;
+        }
+        p=(struct node*)malloc(sizeof(struct node));
+         q=(struct node*)malloc(sizeof(struct node));
+         q->Next=NULL;
+
+        for(k=0;k<38;++k){                                               //returning the nodes containing the data to linked list in order
+            array[k]=array[k]->Next;
+            while(IsEmpty(array[k])==0){
+                q=p;
+                while(q->Next!=NULL)
+                     q=q->Next;
+                 Insert(array[k]->Next->Data,p,q);
+                 array[k]=array[k]->Next;
+            }
+        }
+    for(k=0;k<38;++k)
+            array[k]->Next=NULL;
+    //refilling the array with the characters to compare it with characters in the strings
+    Insert("*",array,array[0]);
+    Insert(" ",array,array[1]);
+    for(k=2,w=0;k<12;k++,w++){
+        character[0]='0'+w;
+        Insert(character,array,array[k]);
+}
+
+    for(k=12,w=0;k<38;k++,w++){
+        character[0]='a'+w;
+        Insert(character,array,array[k]);
+    }
+    for(k=0;k<38;k++)
+        a[k]=array[k];
+    }
+
+    ReturnOriginal(p,numOfDigits2);                               //returning the strings to its original with out the * character
+    }
+    return p;
+}
+
+void ReturnOriginal(struct node *L,int max){                     //the function to return the strings to its original with out the * character
+    struct node *p;
+    int i;
+    p=L->Next;
+    while(p!=NULL){
+    for(i = 0; i < max; i++)
+		if(p->Data[i]=='*')
+			strcpy(p->Data,strtok(p->Data,"*"));
+    p=p->Next;
+    }
+}
+
+void changeData(struct node *L, int max){                          //the function to append * to end of the data in the nodes so that all the strings would be the same length
+    struct node*p;
+    p=L->Next;
+    while(p!=NULL){
+    while (max != strlen(p->Data))
+        strcat(p->Data,"*");
+    p=p->Next;
+    }
+
+}
+
+struct node* MakeEmpty(struct node* L){                            //function to make the linked list empty
+    if(L!=NULL)
+        DeleteList(L);
+    L=(struct node*)malloc(sizeof(struct node));
+    if(L==NULL)
+        printf("out of memory!\n");
+    L->Next=NULL;
+    return L;
+}
+
+int IsEmpty(struct node*L){                                       //function to check whether the linked list is empty
+    return L->Next==NULL;
+}
+
+int IsLast(struct node*p,struct node *L){                          //function to check whether the given node is the last node in the linked list
+    return p->Next==NULL;
+}
+
+struct node* Find(char x[], struct node* L){                       //function to return the node containing the given string
+    struct node* p;
+    p =L->Next;
+    while(p!=NULL&&(strcmp(p->Data,x)!=0))
+        p=p->Next;
+    return p;
+}
+
+struct node* FindPrevious(char x[], struct node*L){              //function to return the previous node to the node containing the given string
+    struct node*p;
+    p=L;
+    while(p->Next!=NULL&&(strcmp(p->Next->Data,x)!=0))
+        p=p->Next;
+    return p;
+}
+
+void Delete(char x[], struct node*L){                           //function to delete the node containing the given string
+    struct node* p, *temp;
+    p=FindPrevious(x,L);
+    if(!IsLast(p,L)){
+        temp=p->Next;
+        p->Next=temp->Next;
+        free(temp);
+    }
+}
+
+void Insert(char x[], struct node*L, struct node *p){          //function to insert a node containing the given string after a specific node p
+    struct node* temp;
+    temp=(struct node*)malloc(sizeof(struct node));
+    strcpy(temp->Data,x);
+    temp->Next=p->Next;
+    p->Next=temp;
+}
+
+void PrintList(struct node*L){                                 //function to print the data in the nodes in the linked list
+    struct node*p=L;
+    if(IsEmpty(L))
+        printf("Empty List!\n\n");
+    else
+    do{
+        p=p->Next;
+        printf("%s\t",p->Data);
+    }while (! IsLast(p,L));
+    printf("\n");
+
+}
+
+void DeleteList(struct node* L){                              //function to delete the linked list with keeping only the head
+    struct node* p ,*temp;
+    p=L->Next;
+    L->Next=NULL;
+    while(p!= NULL){
+        temp=p->Next;
+        free(p);
+        p=temp;
+    }
+}
+
+int Size(struct node*L){                                   //function to find the size of the linked list
+    struct node*ptr=L->Next;
+    int count=0;
+    while(ptr!=NULL){
+        count++;
+        ptr=ptr->Next;
+    }
+    return count;
+}
